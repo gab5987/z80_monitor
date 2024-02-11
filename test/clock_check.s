@@ -1,7 +1,13 @@
-
 .org 0x00
 _start:
-    ld b, 0
+    jp _main
+.org 0x05
+variable:
+    .byte 0x00
+.org 0x0a
+_main:
+    ld hl, variable
+    ld b, (hl)
 _loop_cond:  
     ld a, 255
     cp b
