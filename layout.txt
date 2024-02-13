@@ -1,0 +1,63 @@
+
+Z80 ADDR -> | _ _ | _ _ _ | _ _ _ _ _ _ _ _ _ _ _ |
+              |     |       |
+              |     |       |
+              |     |       -> Peripheral Addressing Value (11 bits)
+              |     |
+              |     - > Group Peripheral Address (3 bits)
+              |
+              - > Page Group (2 bits)
+
+Page Group:
+    Controls which peripheral page to operate to.
+
+    - Page 0b00 -> Internal page refering to the ROM, RAM, IO Extensor, ...
+    - Page 0b01 -> Free.
+    - Page 0b10 -> Free.
+    - Page 0b11 -> Free.
+
+Group Peripheral Address:
+    Controls which peripheral to address inside the already ddressed page.
+
+    - Page 0b00:
+        - 0b000: 2KB Bios ROM memory.
+        - 0b001: Free.
+        - 0b010: Free.
+        - 0b011: Free.
+        - 0b100: Free.
+        - 0b101: Intel P8255A-5 I/O Extensor/Adapter
+        - 0b110: 2KB Static Random Access Memory.
+        - 0b111: Free.
+    
+    - Page 0b01:
+        - 0b000: Free.
+        - 0b001: Free.
+        - 0b010: Free.
+        - 0b011: Free.
+        - 0b100: Free.
+        - 0b101: Free. 
+        - 0b110: Free.
+        - 0b111: Free.
+    
+    - Page 0b10:
+        - 0b000: Free.
+        - 0b001: Free.
+        - 0b010: Free.
+        - 0b011: Free.
+        - 0b100: Free.
+        - 0b101: Free. 
+        - 0b110: Free.
+        - 0b111: Free.
+    
+    - Page 0b11:
+        - 0b000: Free.
+        - 0b001: Free.
+        - 0b010: Free.
+        - 0b011: Free.
+        - 0b100: Free.
+        - 0b101: Free. 
+        - 0b110: Free.
+        - 0b111: Free.
+
+Peripheral Addressing Value:
+    Device specific.
