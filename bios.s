@@ -27,72 +27,98 @@ lcd_wait:
     ld hl, IO_ADDR_SP
     ld (hl), IO_CONTROL_WORD_8
 
-lcd_busy:
     ld hl, LCD_CFG_ADDR
+    ld de, LCD_DATA_ADDR
+
+lcd_busy:
     ld (hl), LCD_RW
-    ld (hl), 0b01100000 ; LCD_RW | LCD_E
-    ld hl, LCD_DATA_ADDR
-    ld a, (hl)
-    and LCD_BUSY_FLAG
+    ld (hl), LCD_RW | LCD_EN
+    ld a, (de)
+   
+    bit LCD_BUSY_FLAG_BIT, a
     jp nz, lcd_busy
     
-    ld hl, LCD_CFG_ADDR
     ld (hl), LCD_RW
 
+    ; TODO: Actually read the value from the SP and store it to return with the same config
+    ld hl, IO_ADDR_SP
     ld (hl), IO_CONTROL_WORD_0
+    
     pop af
     ret
 
-; Expects instruction stored in the A register.
+; Expects instruction stored in the b register.
 lcd_instruction:
-    ; call lcd_wait
+    call lcd_wait
 
     ld hl, LCD_DATA_ADDR
-    ld (hl), a 
+    ld (hl), b
 
     ld hl, LCD_CFG_ADDR
-    ld a, 0x00 ; Clear RS/RW/E bits
-    ld (hl), a 
-    ld a, LCD_EN ; Set E bit to send instruction
-    ld (hl), a 
-    ld a, 0x00 ; Clear RS/RW/E bits
-    ld (hl), a ; Clear RS/RW/E bits
+    ld (hl), 0x00   ; Clear RS/RW/E bits
+    ld (hl), LCD_EN ; Set E bit to send instruction
+    ld (hl), 0x00   ; Clear RS/RW/E bits
    
     ret
 
+; Expects thee character to be stored in the b register.
+put_char:
+    push hl
+
+    call lcd_wait
+
+    ld hl, LCD_DATA_ADDR
+    ld (hl), b
+
+    ld hl, LCD_CFG_ADDR
+    ld (hl), LCD_RS          ; Set RS; Clear RW/E bits
+    ld (hl), LCD_EN | LCD_RS ; Set E bit to send instruction
+    ld (hl), LCD_RS          ; Clear E bits
+
+    pop hl
+    ret
+
 lcd_setup:
-    ld a, LCD_MODE
+    ld b, LCD_MODE
     call lcd_instruction
     
-    ld a, LCD_DON
+    ld b, LCD_DON
     call lcd_instruction
 
-    ld a, LCD_SHIFT
+    ld b, LCD_SHIFT
     call lcd_instruction
 
-    ld a, LCD_CLEAR
+    ld b, LCD_CLEAR
     call lcd_instruction
 
     ret
 
-; ; String addr goes to HL Pair
-; puts:
-;     push ix
-;     ; push a
-;     0$:
-;         ; ld a, (hl + ix)
-;     cp 0x00
-;     jp z, 1
-;         
-;     ; TODO: Print characters here
-;     jp 0
-;     1$:
-;     ; pop a
-;     pop ix
-;     ret
+; String addr goes to IX Pair
+puts:
+    push af
+    0$: 
+        ld a, (ix)
+        cp 0x00
+        jp z, 1
+
+        ld b, a
+        call put_char
+
+        inc ix
+        jp 0
+    1$:
+    pop af
+    ret
+
+
+hello:
+.ascii "Hello, World!", 0
 
 main:
     call lcd_setup
+
+    ld ix, hello
+    call puts
     
     halt
 
