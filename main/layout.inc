@@ -23,7 +23,7 @@
 .equ LCD_RW, 0b01000000
 .equ LCD_EN, 0b00100000
 .equ LCD_MODE, 0b00111000  ; 8-bit mode; 2-line display; 5x8 font
-.equ LCD_DON, 0b00001111   ; Display on; cursor on; blink off
+.equ LCD_DON, 0b00001110   ; Display on; cursor on; blink off
 .equ LCD_SHIFT, 0b00000110 ; Increment and shift cursor; don't shift display
 .equ LCD_CLEAR, 0b00000001 ; Clear display
 .equ LCD_BUSY_FLAG, 0b10000000

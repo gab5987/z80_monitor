@@ -1,7 +1,7 @@
-.include "layout.s"
+.include "layout.inc"
 
-.org 0x0000
-_rst_vec:
+.section ".start", "acrx"
+__start__:
     ; Sets up the RAM stack pointer
     ld sp, RAM_END
 
@@ -9,17 +9,38 @@ _rst_vec:
     ld hl, IO_ADDR_SP
     ld (hl), IO_CONTROL_WORD_0
 
+    ei
+    im 1
+
+    ld b, 0x00
+
     jp main
+
+.section .text
+; str:
+;     .ascii "0", 0
 
 .org INT_ADDR
 _int_response:
-    di
-    ei
-    ret
+    ; di
+    ; push af
+    ;
+    ; ld a, (counter)
+    ; inc a
+    ; ld (counter), a
+    ; add a, 30
+    ; ld (str), a
+    ;
+    ; ld hl, str
+    ; call puts
+    ;
+    ; pop af
+    ; ei
+    reti
 
 .org NMI_ADDR
 _nmi_response:
-    ret
+    retn
 
 ; Awaits for the LCD to finish its instruction cycle
 lcd_wait:
@@ -93,33 +114,47 @@ lcd_setup:
 
     ret
 
-; String addr goes to IX Pair
+; String addr goes to HL Pair
 puts:
     push af
+    push bc
+    
     0$: 
-        ld a, (ix)
-        cp 0x00
-        jp z, 1
+        ld a, (hl)
+        or a
+        jp z, 1$
 
         ld b, a
         call put_char
 
-        inc ix
-        jp 0
+        inc hl
+        jp 0$
     1$:
+
+    pop bc
     pop af
     ret
-
-
-hello:
-.ascii "Hello, World!", 0
 
 main:
     call lcd_setup
 
-    ld ix, hello
+    ld hl, hello
     call puts
+
+    ; loop$:
+        ; str:
+        ;     .ascii "0", 0
+        ; ld a, (str)
+        ; add a, 30
+        ; ld (str), a
+        ;
+        ; ld hl, str
+        ; call puts
+    ; jp loop$
     
     halt
 
-.org 0x0800
+.section .rodata
+hello:
+    .ascii "Hello, World!", 0
+
