@@ -1,6 +1,8 @@
 .include "layout.inc"
 
 .section ".start", "acrx"
+.org 0x0000
+; Application entry point and reset vector.
 __start__:
     ; Sets up the RAM stack pointer
     ld sp, RAM_END
@@ -12,35 +14,33 @@ __start__:
     ei
     im 1
 
-    ld b, 0x00
-
     jp main
 
-.section .text
-; str:
-;     .ascii "0", 0
-
 .org INT_ADDR
-_int_response:
-    ; di
-    ; push af
-    ;
-    ; ld a, (counter)
-    ; inc a
-    ; ld (counter), a
-    ; add a, 30
-    ; ld (str), a
-    ;
-    ; ld hl, str
-    ; call puts
-    ;
-    ; pop af
-    ; ei
+; Interrupt vector, the cpu will reset to this location once
+; a Maskable Interrupt occours.
+__int_vector:
+    di
+    call lcd_return_home
+
+    ld a, (counter)
+    inc a
+    ld (counter), a
+    add a, '0'
+     
+    ld b, a
+    call put_char
+    
+    ei
     reti
 
 .org NMI_ADDR
-_nmi_response:
+; Non Maskable Interrupt vector, the cpu will reset to this 
+;location once a Non Maskable Interrupt occours.
+__nmi_vector:
     retn
+
+.section .text
 
 ; Awaits for the LCD to finish its instruction cycle
 lcd_wait:
@@ -50,14 +50,14 @@ lcd_wait:
 
     ld hl, LCD_CFG_ADDR
     ld de, LCD_DATA_ADDR
-
-lcd_busy:
-    ld (hl), LCD_RW
-    ld (hl), LCD_RW | LCD_EN
-    ld a, (de)
-   
-    bit LCD_BUSY_FLAG_BIT, a
-    jp nz, lcd_busy
+    
+    __lcd_busy$:
+        ld (hl), LCD_RW
+        ld (hl), LCD_RW | LCD_EN
+        ld a, (de)
+       
+        bit LCD_BUSY_FLAG_BIT, a
+        jp nz, __lcd_busy$
     
     ld (hl), LCD_RW
 
@@ -68,8 +68,12 @@ lcd_busy:
     pop af
     ret
 
-; Expects instruction stored in the b register.
+; Sends a instruction to the LCD display.
+;
+; Param:
+; - Expects instruction stored in the B register.
 lcd_instruction:
+    push hl
     call lcd_wait
 
     ld hl, LCD_DATA_ADDR
@@ -79,13 +83,16 @@ lcd_instruction:
     ld (hl), 0x00   ; Clear RS/RW/E bits
     ld (hl), LCD_EN ; Set E bit to send instruction
     ld (hl), 0x00   ; Clear RS/RW/E bits
-   
+
+    pop hl
     ret
 
-; Expects thee character to be stored in the b register.
+; Sends a character to the display.
+;
+; Param:
+; - Expects the character stored in the B register.
 put_char:
     push hl
-
     call lcd_wait
 
     ld hl, LCD_DATA_ADDR
@@ -99,6 +106,7 @@ put_char:
     pop hl
     ret
 
+; Initializes the LCD display.
 lcd_setup:
     ld b, LCD_MODE
     call lcd_instruction
@@ -114,47 +122,61 @@ lcd_setup:
 
     ret
 
-; String addr goes to HL Pair
+; Returns the display cursor to the home location
+lcd_return_home:
+    push bc
+
+    ld b, LCD_HOME
+    call lcd_instruction
+
+    pop bc
+    ret
+
+
+; Prints a whole zero terminated string onto the display.
+; This function does not counts for display overflows!
+;
+; Param:
+; - Expects a pointer to a string in the HL pair.
 puts:
     push af
     push bc
     
-    0$: 
+    __print_n_char$: 
         ld a, (hl)
         or a
-        jp z, 1$
+        jp z, __exit$
 
         ld b, a
         call put_char
 
         inc hl
-        jp 0$
-    1$:
-
+        jp __print_n_char$
+    
+    __exit$:
     pop bc
     pop af
     ret
 
+; Main application function.
 main:
     call lcd_setup
 
-    ld hl, hello
-    call puts
+    ; ld hl, hello
+    ; call puts
 
-    ; loop$:
-        ; str:
-        ;     .ascii "0", 0
-        ; ld a, (str)
-        ; add a, 30
-        ; ld (str), a
-        ;
-        ; ld hl, str
-        ; call puts
-    ; jp loop$
-    
+    ld a, 0
+    ld (counter), a
+
+    loop:
+        jp loop
+
     halt
 
 .section .rodata
 hello:
     .ascii "Hello, World!", 0
+
+.section .bss
+    .bss counter, 1
 

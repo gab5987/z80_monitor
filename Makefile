@@ -4,12 +4,15 @@ AS = vasmz80_std
 ASFLAGS = -Fvobj
 
 LD = vlink
-LDFLAGS = -b rawbin1 -T link.ld
+LDFLAGS = -s -b rawbin1 -C z2 -T link.ld
 
 SRCDIR = main
 BUILDDIR = build
 
-TARGET = bootable.bin
+TARGET = binary.bin
+BOOTABLE = bootable.bin
+
+BIOS_ROM_SIZE = 0x0800
 
 SRC := $(wildcard main/*.s)
 OBJ := $(addprefix build/,$(notdir $(SRC:.s=.o)))
@@ -17,7 +20,8 @@ OBJ := $(addprefix build/,$(notdir $(SRC:.s=.o)))
 all: $(TARGET)
 
 upload: $(TARGET)
-	minipro -p $(ROM) -w $(TARGET)
+	dd if=$(TARGET) of=$(BOOTABLE) bs=1 skip=0 count=$(BIOS_ROM_SIZE)
+	minipro -p $(ROM) -w $(BOOTABLE)
 
 $(TARGET): $(OBJ)
 	$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ)

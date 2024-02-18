@@ -26,5 +26,6 @@
 .equ LCD_DON, 0b00001110   ; Display on; cursor on; blink off
 .equ LCD_SHIFT, 0b00000110 ; Increment and shift cursor; don't shift display
 .equ LCD_CLEAR, 0b00000001 ; Clear display
+.equ LCD_HOME, 0b00000010 ; Sets display cursor to 0x00
 .equ LCD_BUSY_FLAG, 0b10000000
 .equ LCD_BUSY_FLAG_BIT, 7 ; 7th bit of the data
